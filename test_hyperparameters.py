@@ -168,60 +168,79 @@ def plot_hyperparams(name, lr_avg, bs_avg, ne_avg, learning_rate, batch_size, nu
 
     plt.tight_layout()
     plt.show()
+    
+def test_hyperparams():
+    # Hyperparameters
+    learning_rate = [0.0001,0.001,0.01,0.1,1]
+    batch_size = [8,16,32,64,128]
+    num_epochs = [5,10,20,35,50]
+    
+    # Adam Optimization
+    # Results Dictionary
+    results = {}
+    lr_avg = [[] for _ in range(len(learning_rate))]
+    bs_avg = [[] for _ in range(len(batch_size))]
+    ne_avg = [[] for _ in range(len(num_epochs))]
+    
+    # Loop through all hyperparameter possibilities
+    for lr in learning_rate:
+      print(f'\nLearning Rate: {lr}\n')
+      for bs in batch_size:
+        print(f'\nBatch Size: {bs}\n')
+        for ne in num_epochs:
+          # Data loaders
+          train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
+          val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=False)
+          test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False)
+    
+          # Initialize the network, loss function, and SGD/Adam optimizer
+          model = NeuralNet()
+          criterion = nn.CrossEntropyLoss()
+          optimizer = optim.SGD(model.parameters(), lr=lr)
+    
+          # Training the model
+          train_losses, val_losses, train_accs, val_accs = train_model(model, train_loader, val_loader, ne, criterion, optimizer)
+    
+          # Evaluating the model on the test set
+          acc = evaluate_model(f'lr={lr}, bs={bs}, ne={ne}', model, test_loader)
+    
+          # Save results
+          results[f'lr={lr}, bs={bs}, ne={ne}'] = {
+              'accuracy': acc,
+              'train_losses': train_losses,
+              'val_losses': val_losses,
+              'train_accs': train_accs,
+              'val_accs': val_accs
+          }
+          lr_avg[learning_rate.index(lr)].append(acc)
+          bs_avg[batch_size.index(bs)].append(acc)
+          ne_avg[num_epochs.index(ne)].append(acc)
+    
+    # Plotting the results of hyperparameter test
+    plot_hyperparams('SGD Optimization', lr_avg, bs_avg, ne_avg, learning_rate, batch_size, num_epochs)
+    
+    largest_acc = [0,'none']
+    for key in results:
+      if results[key]['accuracy'] > largest_acc[0]:
+        largest_acc[0] = results[key]['accuracy']
+        largest_acc[1] = key
+    
+    print(f'The best hyperparameters for SGD Optimization are {largest_acc[1]} with an accuracy of {largest_acc[0]}')
 
-# Hyperparameters
-learning_rate = [0.0001,0.001,0.01,0.1,1]
-batch_size = [8,16,32,64,128]
-num_epochs = [5,10,20,35,50]
+# Call the hyperparameter test function - comment out to only test a single model
+test_hyperparams()
 
-# Adam Optimization
-# Results Dictionary
-results = {}
-lr_avg = [[] for _ in range(len(learning_rate))]
-bs_avg = [[] for _ in range(len(batch_size))]
-ne_avg = [[] for _ in range(len(num_epochs))]
+# Train and test single model
+# Data loaders
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-# Loop through all hyperparameter possibilities
-for lr in learning_rate:
-  print(f'\nLearning Rate: {lr}\n')
-  for bs in batch_size:
-    print(f'\nBatch Size: {bs}\n')
-    for ne in num_epochs:
-      # Data loaders
-      train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
-      val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=False)
-      test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=False)
+# Initialize the network, loss function, and SGD/Adam optimizer
+model = NeuralNet()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=.1)
 
-      # Initialize the network, loss function, and Adam optimizer
-      model = NeuralNet()
-      criterion = nn.CrossEntropyLoss()
-      optimizer = optim.SGD(model.parameters(), lr=lr)
-
-      # Training the model
-      train_losses, val_losses, train_accs, val_accs = train_model(model, train_loader, val_loader, ne, criterion, optimizer)
-
-      # Evaluating the model on the test set
-      acc = evaluate_model(f'lr={lr}, bs={bs}, ne={ne}', model, test_loader)
-
-      # Save results
-      results[f'lr={lr}, bs={bs}, ne={ne}'] = {
-          'accuracy': acc,
-          'train_losses': train_losses,
-          'val_losses': val_losses,
-          'train_accs': train_accs,
-          'val_accs': val_accs
-      }
-      lr_avg[learning_rate.index(lr)].append(acc)
-      bs_avg[batch_size.index(bs)].append(acc)
-      ne_avg[num_epochs.index(ne)].append(acc)
-
-# Plotting the results of hyperparameter test
-plot_hyperparams('SGD Optimization', lr_avg, bs_avg, ne_avg, learning_rate, batch_size, num_epochs)
-
-largest_acc = [0,'none']
-for key in results:
-  if results[key]['accuracy'] > largest_acc[0]:
-    largest_acc[0] = results[key]['accuracy']
-    largest_acc[1] = key
-
-print(f'The best hyperparameters for SGD Optimization are {largest_acc[1]} with an accuracy of {largest_acc[0]}')
+# Training the model
+train_losses, val_losses, train_accs, val_accs = train_model(model, train_loader, val_loader, 50, criterion, optimizer)
+plot_results('SGD', train_losses, val_losses, train_accs, val_accs)
