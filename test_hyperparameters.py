@@ -244,3 +244,4 @@ optimizer = optim.SGD(model.parameters(), lr=.1)
 # Training the model
 train_losses, val_losses, train_accs, val_accs = train_model(model, train_loader, val_loader, 50, criterion, optimizer)
 plot_results('SGD', train_losses, val_losses, train_accs, val_accs)
+evaluate_model(f'SGD', model, test_loader)
